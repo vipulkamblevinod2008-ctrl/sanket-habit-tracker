@@ -1,0 +1,51 @@
+<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><title>October Habit Tracker</title>
+<style>
+body{margin:0;background:#0b0c0f;color:#eee;font-family:Arial,sans-serif}.app{max-width:720px;margin:auto;padding:14px}h1{font-size:24px}.card{background:#17191d;border:1px solid #30343b;border-radius:15px;padding:13px;margin:10px 0}.tabs,.actions,.moods{display:grid;grid-template-columns:1fr 1fr;gap:8px}.tab,button{border:1px solid #40444b;background:#202329;color:#eee;border-radius:10px;padding:11px}.tab.active,.check.on,.mood.on{background:#fff;color:#111}.date{display:flex;gap:8px;align-items:center;margin-top:9px}.date b{flex:1;text-align:center}.small{font-size:12px;color:#9da3ad}.big{font-size:28px;font-weight:bold}.bar{height:8px;background:#30343b;border-radius:9px;overflow:hidden}.bar i{display:block;height:100%;background:#fff}.habit{border-top:1px solid #30343b;padding:11px 0}.row{display:flex;gap:8px;align-items:center}.name{flex:1;font-weight:bold;font-size:14px}.hp{font-size:11px;color:#aaa}.check{width:40px;height:40px;padding:0}.moods{grid-template-columns:repeat(5,1fr)}.daygrid{display:grid;grid-template-columns:repeat(5,1fr);gap:7px}.day.on{background:#fff;color:#111}.day.today{outline:2px solid #777}canvas{width:100%;height:220px;background:#101216;border-radius:12px}.hidden{display:none}.danger{background:#281517}.note{font-size:11px;color:#9da3ad;line-height:1.45}
+
+/* Professional polish */
+body{background:radial-gradient(circle at 50% -10%,#252b35 0,#0b0d11 38%,#090b0f 100%);}
+.app{max-width:760px;padding:18px 14px 48px}
+.card{box-shadow:0 14px 36px rgba(0,0,0,.28)}
+.tab{transition:.18s}.tab.active{box-shadow:0 5px 18px rgba(255,255,255,.08)}
+.check{transition:transform .12s,background .15s}.check:active{transform:scale(.92)}
+.day,.mood,.action{transition:transform .12s,background .15s}.day:active,.mood:active,.action:active{transform:scale(.97)}
+@media(max-width:420px){h1{font-size:23px}.moods{gap:5px}.mood{min-height:78px}.app{padding-left:11px;padding-right:11px}}
+</style><link rel="manifest" href="manifest.json"><meta name="theme-color" content="#090b0f"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"></head><body><div class="app">
+<h1>OCTOBER 2026 — NEW VERSION OF ME</h1><div class="small">1 October → 30 October • Tap once = complete • tap again = undo</div>
+<div class="card"><div class="tabs"><button id="t" class="tab active">TODAY</button><button id="m" class="tab">ALL MONTH</button></div><div class="date"><button onclick="chg(-1)">‹</button><b id="date"></b><button onclick="chg(1)">›</button></div></div>
+<div id="today"><div class="card"><div class="small">TODAY'S COMPLETION</div><div class="big" id="pct">0%</div><div class="small" id="cnt"></div><div class="bar"><i id="bar"></i></div></div><div class="card"><h3>Today's Habits</h3><div id="habits"></div></div><div class="card"><h3>Today's Mood</h3><div class="moods" id="moods"></div></div></div>
+<div id="month" class="hidden"><div class="card"><div class="small">MONTH OVERVIEW</div><div class="big" id="mpct">0%</div><div class="bar"><i id="mbar"></i></div><p class="note">Tap a date to open that day's habits.</p></div><div class="card"><h3>1–30 October</h3><div class="daygrid" id="days"></div></div></div>
+<div class="card"><h3>Daily Graph</h3><canvas id="dg" width="700" height="240"></canvas><div class="small">Selected day's completed habits.</div></div>
+<div class="card"><h3>Monthly Graph — 1 to 30 October</h3><canvas id="mg" width="700" height="260"></canvas><div class="small">Each point = habits completed that day.</div></div>
+<div class="card"><h3>Data Safety</h3><div class="actions"><button onclick="backup()">SAVE BACKUP</button><button onclick="restore()">RESTORE BACKUP</button><button class="danger" onclick="reset()">RESET (RECOVERABLE)</button><button onclick="download()">DOWNLOAD DATA</button></div><p class="note">A second local backup is kept separately. Reset does not delete it, so an accidental reset can be restored. Download a backup occasionally for extra safety.</p></div>
+</div>
+<script>
+const H=["Wake up at 6:00 AM","No phone 6:00 AM–1:00 PM","No phone while travelling home from college","Study","AIML / Coding practice","Maths basics","Lecture attendance","English speaking","Focused study session","Read / learn something useful","Sleep on time","Today's college notes"],N=30;
+let d=Math.max(1,Math.min(30,new Date().getDate())),view="today";
+let s=JSON.parse(localStorage.getItem("SANKET_OCT26")||'{"c":{},"m":{}}');
+function save(){localStorage.setItem("SANKET_OCT26",JSON.stringify(s));localStorage.setItem("SANKET_OCT26_BACKUP",JSON.stringify(s))}
+function k(h,x){return h+"_"+x} function done(h,x){return !!s.c[k(h,x)]}
+function dc(x){return H.reduce((a,_,i)=>a+done(i,x),0)}
+function chg(x){d=Math.max(1,Math.min(N,d+x));render()}
+t.onclick=()=>{view="today";render()};m.onclick=()=>{view="month";render()};
+function render(){t.classList.toggle("active",view=="today");m.classList.toggle("active",view=="month");today.classList.toggle("hidden",view!="today");month.classList.toggle("hidden",view!="month");date.textContent="October "+d+", 2026";let c=dc(d),p=Math.round(c/H.length*100);pct.textContent=p+"%";cnt.textContent=c+"/"+H.length+" habits";bar.style.width=p+"%";renderH();renderMood();renderM();graphs()}
+function renderH(){habits.innerHTML="";H.forEach((h,i)=>{let total=0;for(let x=1;x<=N;x++)total+=done(i,x);let r=document.createElement("div");r.className="habit";r.innerHTML='<div class="row"><div class="name">'+(i+1)+". "+h+'</div><div class="hp">'+Math.round(total/N*100)+'%</div></div>';let b=document.createElement("button");b.className="check "+(done(i,d)?"on":"");b.textContent=done(i,d)?"✓":"";b.onclick=()=>{s.c[k(i,d)]=!s.c[k(i,d)];save();render()};r.firstChild.appendChild(b);habits.appendChild(r)})}
+function moodFace(type){
+ const mouths={amazing:'M9 18 Q16 27 23 18',good:'M9 19 Q16 23 23 19',okay:'M10 20 L22 20',low:'M10 23 Q16 18 22 23',bad:'M9 24 Q16 17 23 24'};
+ return '<svg width="30" height="30" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="14" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="11" cy="13" r="1.7" fill="currentColor"/><circle cx="21" cy="13" r="1.7" fill="currentColor"/><path d="'+mouths[type]+'" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
+}
+function renderMood(){
+ const moods=[['5','Amazing','amazing'],['4','Good','good'],['3','Okay','okay'],['2','Low','low'],['1','Bad','bad']];
+ document.getElementById('moods').innerHTML='';
+ moods.forEach(([v,label,type])=>{
+  let b=document.createElement('button');b.className='mood '+(s.m[d]==v?'on':'');
+  b.innerHTML=moodFace(type)+'<br><b>'+label+'</b>';
+  b.onclick=()=>{s.m[d]=s.m[d]==v?'':v;save();render()};
+  document.getElementById('moods').appendChild(b)
+ });
+}
+function renderM(){let all=H.length*N,total=0;for(let x=1;x<=N;x++)total+=dc(x);mpct.textContent=Math.round(total/all*100)+"%";mbar.style.width=Math.round(total/all*100)+"%";days.innerHTML="";for(let x=1;x<=N;x++){let b=document.createElement("button");b.className="day "+(dc(x)==H.length?"on ":"")+(x==d?"today":"");b.innerHTML="<b>"+x+"</b><br><small>"+dc(x)+"/"+H.length+"</small>";b.onclick=()=>{d=x;view="today";render()};days.appendChild(b)}}
+function graph(c,vals,max,title){let x=c.getContext("2d"),W=c.width,Hh=c.height,L=38,R=10,T=24,B=30,gW=W-L-R,gH=Hh-T-B;x.clearRect(0,0,W,Hh);x.strokeStyle="#343840";x.fillStyle="#9da3ad";x.font="11px Arial";for(let i=0;i<=5;i++){let y=T+gH-i*gH/5;x.beginPath();x.moveTo(L,y);x.lineTo(W-R,y);x.stroke();x.fillText(Math.round(max*i/5),5,y+4)}x.fillStyle="#fff";x.font="bold 12px Arial";x.fillText(title,L,14);let xx=i=>L+(vals.length==1?gW/2:gW*i/(vals.length-1)),yy=v=>T+gH-v/max*gH;x.strokeStyle="#fff";x.lineWidth=3;x.beginPath();vals.forEach((v,i)=>i?x.lineTo(xx(i),yy(v)):x.moveTo(xx(i),yy(v)));x.stroke();vals.forEach((v,i)=>{x.fillStyle="#fff";x.beginPath();x.arc(xx(i),yy(v),4,0,7);x.fill();if(vals.length<10||i%5==0||i==vals.length-1){x.fillStyle="#9da3ad";x.font="10px Arial";x.fillText(i+1,xx(i)-4,Hh-9)}})}
+function graphs(){graph(dg,[dc(d)],H.length,"SELECTED DAY");graph(mg,Array.from({length:N},(_,i)=>dc(i+1)),H.length,"OCTOBER 1–30")}
+function backup(){localStorage.setItem("SANKET_OCT26_BACKUP",JSON.stringify(s));alert("Backup saved on this phone.")}function restore(){let b=JSON.parse(localStorage.getItem("SANKET_OCT26_BACKUP")||"null");if(b&&confirm("Restore saved backup?")){s=b;save();render()}}function reset(){if(confirm("Reset visible data? Your separate backup will NOT be deleted.")){s={c:{},m:{}};localStorage.setItem("SANKET_OCT26",JSON.stringify(s));render()}}function download(){let a=document.createElement("a");a.href=URL.createObjectURL(new Blob([JSON.stringify(s,null,2)],{type:"application/json"}));a.download="Sanket_October_2026_Backup.json";a.click()}render();
+</script><script>if("serviceWorker" in navigator){navigator.serviceWorker.register("sw.js").catch(()=>{});}</script></body></html>
